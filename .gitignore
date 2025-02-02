@@ -47,3 +47,9 @@ po/*~
 
 # RStudio Connect folder
 rsconnect/
+
+# targets package
+_data/
+_meta/ 
+_targets/ 
+
