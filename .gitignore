@@ -53,3 +53,5 @@ _data/
 _meta/ 
 _targets/ 
 
+# /renv folder - can be generated from the renv.lock script
+renv/
