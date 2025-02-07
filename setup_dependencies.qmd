@@ -1,0 +1,75 @@
+---
+title: "What packages and versions do I need in this R project?" 
+format: 
+        html:
+                embed-resources: true
+                self-contained: true
+execute: 
+        echo: true
+---
+This script helps understand which packages are used in the R project, including 
+their versions and a path to which scripts they are used in. 
+
+The code chunks also give some of the useful functions from the {renv} package 
+that have to helped manage the library of packages for the project.
+
+:::{.callout-warning}
+### Some code is set to _not_ run!
+Rendering this document sets up {renv} if you haven't set it up yet, and shows 
+you the packages you need.
+
+There are also {renv} functions that:
+
+- restore the environment and revert changes, and
+
+- update the current environment once you've used new packages. 
+
+**These functions do not run automatically**. They are added to help understand 
+how to use {renv} while navigating and adding to scripts within the R project.
+:::
+
+# Manage Dependencies with {renv}
+
+## Activating {renv}
+
+```{r}
+## Activate renv (initialise if not already set up)
+if (!file.exists("renv.lock")) {
+        renv::init()
+} else {
+        renv::activate()
+}
+```
+
+## 2. Scan all the project files and look for any packages used.
+
+```{r}
+deps <- renv::dependencies()
+# Format dependencies as a tibble for better readability
+dplyr::as_tibble(deps) |>
+        janitor::clean_names() |>
+        # Next, make be the filepath relative to the project root, and add the package version.
+        dplyr::mutate(
+                source = stringr::str_replace(source, normalizePath(here::here()), "."), 
+                version = purrr::map_chr(package, ~ tryCatch(as.character(packageVersion(.x)), error = function() NA)))
+```
+
+## 3. Restore the environment
+
+Resets the environment to only what is needed to run the scripts. 
+
+```{r, eval = FALSE}
+renv::restore()
+```
+
+## 4. Update the packages needed when you add more code
+
+If you aren't sure if you need to update the environment, first run `renv::status()`. 
+It tells you which functions are installed locally, which have been used and 
+which have been recorded in renv.lock. 
+Update the .lock file with `renv::snapshot()`.
+
+```{r, eval = FALSE}
+renv::status()
+renv::snapshot()
+```
