@@ -6,6 +6,8 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
+<meta name="author" content="mga3">
+<meta name="dcterms.date" content="2025-02-09">
 
 <title>What packages and versions do I need in this R project?</title>
 <style>
@@ -3091,7 +3093,19 @@ vertical-align: -.125em;
 
 <div class="quarto-title-meta">
 
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>mga3 </p>
+          </div>
+  </div>
     
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">February 9, 2025</p>
+    </div>
+  </div>
   
     
   </div>
@@ -3113,7 +3127,12 @@ Some code is set to <em>not</em> run!
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>Rendering this document sets up {renv} if you haven’t set it up yet, and shows you the packages you need. There are also {renv} functions that: - restore the environment and revert changes, and - update the current environment once you’ve used new packages.</p>
+<p>Rendering this document sets up {renv} if you haven’t set it up yet, and shows you the packages you need.</p>
+<p>There are also {renv} functions that:</p>
+<ul>
+<li><p>restore the environment and revert changes, and</p></li>
+<li><p>update the current environment once you’ve used new packages.</p></li>
+</ul>
 <p><strong>These functions do not run automatically</strong>. They are added to help understand how to use {renv} while navigating and adding to scripts within the R project.</p>
 </div>
 </div>
@@ -3124,9 +3143,9 @@ Some code is set to <em>not</em> run!
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="do">## Activate renv (initialise if not already set up)</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="sc">!</span><span class="fu">file.exists</span>(<span class="st">&quot;renv.lock&quot;</span>)) {</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>        renv<span class="sc">::</span><span class="fu">init</span>()</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    renv<span class="sc">::</span><span class="fu">init</span>()</span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>} <span class="cf">else</span> {</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>        renv<span class="sc">::</span><span class="fu">activate</span>()</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    renv<span class="sc">::</span><span class="fu">activate</span>()</span>
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
@@ -3139,32 +3158,26 @@ Some code is set to <em>not</em> run!
 </div>
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Format dependencies as a tibble for better readability</span></span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>dplyr<span class="sc">::</span><span class="fu">as_tibble</span>(deps) <span class="sc">|&gt;</span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>        janitor<span class="sc">::</span><span class="fu">clean_names</span>() <span class="sc">|&gt;</span></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Next, make be the filepath relative to the project root, and add the package version.</span></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>        dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>                <span class="at">source =</span> stringr<span class="sc">::</span><span class="fu">str_replace</span>(source, <span class="fu">normalizePath</span>(here<span class="sc">::</span><span class="fu">here</span>()), <span class="st">&quot;.&quot;</span>), </span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>                <span class="at">version =</span> purrr<span class="sc">::</span><span class="fu">map_chr</span>(package, <span class="sc">~</span> <span class="fu">tryCatch</span>(<span class="fu">as.character</span>(<span class="fu">packageVersion</span>(.x)), <span class="at">error =</span> <span class="cf">function</span>() <span class="cn">NA</span>)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    janitor<span class="sc">::</span><span class="fu">clean_names</span>() <span class="sc">|&gt;</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Next, make be the filepath relative to the project root, and add the package version.</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>        <span class="at">source =</span> stringr<span class="sc">::</span><span class="fu">str_replace</span>(source, <span class="fu">normalizePath</span>(here<span class="sc">::</span><span class="fu">here</span>()), <span class="st">&quot;.&quot;</span>), </span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>        <span class="at">version =</span> purrr<span class="sc">::</span><span class="fu">map_chr</span>(package, <span class="sc">~</span> <span class="fu">tryCatch</span>(<span class="fu">as.character</span>(<span class="fu">packageVersion</span>(.x)), <span class="at">error =</span> <span class="cf">function</span>() <span class="cn">NA</span>)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 17 × 5
-   source                         package   require version dev  
-   &lt;chr&gt;                          &lt;chr&gt;     &lt;chr&gt;   &lt;chr&gt;   &lt;lgl&gt;
- 1 ./renv.lock                    renv      &quot;&quot;      1.1.0   FALSE
- 2 ./setup_dependencies.qmd       renv      &quot;&quot;      1.1.0   FALSE
- 3 ./setup_dependencies.qmd       dplyr     &quot;&quot;      1.1.4   FALSE
- 4 ./setup_dependencies.qmd       here      &quot;&quot;      1.0.1   FALSE
- 5 ./setup_dependencies.qmd       janitor   &quot;&quot;      2.2.1   FALSE
- 6 ./setup_dependencies.qmd       purrr     &quot;&quot;      1.0.2   FALSE
- 7 ./setup_dependencies.qmd       renv      &quot;&quot;      1.1.0   FALSE
- 8 ./setup_dependencies.qmd       stringr   &quot;&quot;      1.5.1   FALSE
- 9 ./setup_dependencies.qmd       rmarkdown &quot;&quot;      2.29    FALSE
-10 ./setup_dependencies.rmarkdown rmarkdown &quot;&quot;      2.29    FALSE
-11 ./setup_dependencies.rmarkdown renv      &quot;&quot;      1.1.0   FALSE
-12 ./setup_dependencies.rmarkdown dplyr     &quot;&quot;      1.1.4   FALSE
-13 ./setup_dependencies.rmarkdown here      &quot;&quot;      1.0.1   FALSE
-14 ./setup_dependencies.rmarkdown janitor   &quot;&quot;      2.2.1   FALSE
-15 ./setup_dependencies.rmarkdown purrr     &quot;&quot;      1.0.2   FALSE
-16 ./setup_dependencies.rmarkdown renv      &quot;&quot;      1.1.0   FALSE
-17 ./setup_dependencies.rmarkdown stringr   &quot;&quot;      1.5.1   FALSE</code></pre>
+<pre><code># A tibble: 30 × 5
+   source                   package   require version dev  
+   &lt;chr&gt;                    &lt;chr&gt;     &lt;chr&gt;   &lt;chr&gt;   &lt;lgl&gt;
+ 1 ./box_modules.qmd        rprojroot &quot;&quot;      2.0.4   FALSE
+ 2 ./box_modules.qmd        rmarkdown &quot;&quot;      2.29    FALSE
+ 3 ./renv.lock              renv      &quot;&quot;      1.1.0   FALSE
+ 4 ./setup_dependencies.qmd renv      &quot;&quot;      1.1.0   FALSE
+ 5 ./setup_dependencies.qmd dplyr     &quot;&quot;      1.1.4   FALSE
+ 6 ./setup_dependencies.qmd here      &quot;&quot;      1.0.1   FALSE
+ 7 ./setup_dependencies.qmd janitor   &quot;&quot;      2.2.1   FALSE
+ 8 ./setup_dependencies.qmd purrr     &quot;&quot;      1.0.2   FALSE
+ 9 ./setup_dependencies.qmd renv      &quot;&quot;      1.1.0   FALSE
+10 ./setup_dependencies.qmd stringr   &quot;&quot;      1.5.1   FALSE
+# ℹ 20 more rows</code></pre>
 </div>
 </div>
 </section>
