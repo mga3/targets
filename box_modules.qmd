@@ -1,0 +1,50 @@
+---
+title: Notes about how I use {box}
+author: mga3
+format: 
+    html:
+        embed-resources: true
+        self-contained: true
+execute: 
+    echo: true
+date: last-modified
+---
+
+This quarto document notes a description of {box} and a few useful functions to 
+more easily use {box} modules in projects.
+
+# Useful package - {box}
+
+I use {box} in projects so I can create functions that work in a way I want, that
+I can to reuse without copy-pasting the same code in all the scripts. 
+
+To keep things structured, tidy, and therefore reusable, I save the 'modules' 
+(the functions alongside any constants, objects or logic needed to complete the 
+task) in a source ('src' for short) folder.
+
+To use the functions from the module that is set up, run: 
+
+`box::use(src/module_1)`.
+
+Sometimes, if the script is not saved in the projects' root directory, chunks of 
+code in quarto documents struggle to find the source folder containing the box modules.
+The below code chunk added at the start of quarto documents sets the box path so this isn't a problem:
+
+```{r box-setup, message = FALSE, warning = FALSE}
+
+# If working in an .Rproj R project, set the box path, if one exists.
+
+options("box.path" = unique(c(
+
+  getOption("box.path"),
+
+  tryCatch(
+
+    rprojroot::find_rstudio_root_file("src", "R"),
+
+    error = function(e) NULL
+    )
+  )
+  )
+)
+```
