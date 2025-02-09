@@ -1,11 +1,13 @@
 ---
 title: "What packages and versions do I need in this R project?" 
+author: mga3
 format: 
-        html:
-                embed-resources: true
-                self-contained: true
+    html:
+        embed-resources: true
+        self-contained: true
 execute: 
-        echo: true
+    echo: true
+date: last-modified
 ---
 This script helps understand which packages are used in the R project, including 
 their versions and a path to which scripts they are used in. 
@@ -35,9 +37,9 @@ how to use {renv} while navigating and adding to scripts within the R project.
 ```{r}
 ## Activate renv (initialise if not already set up)
 if (!file.exists("renv.lock")) {
-        renv::init()
+    renv::init()
 } else {
-        renv::activate()
+    renv::activate()
 }
 ```
 
@@ -47,11 +49,11 @@ if (!file.exists("renv.lock")) {
 deps <- renv::dependencies()
 # Format dependencies as a tibble for better readability
 dplyr::as_tibble(deps) |>
-        janitor::clean_names() |>
-        # Next, make be the filepath relative to the project root, and add the package version.
-        dplyr::mutate(
-                source = stringr::str_replace(source, normalizePath(here::here()), "."), 
-                version = purrr::map_chr(package, ~ tryCatch(as.character(packageVersion(.x)), error = function() NA)))
+    janitor::clean_names() |>
+    # Next, make be the filepath relative to the project root, and add the package version.
+    dplyr::mutate(
+        source = stringr::str_replace(source, normalizePath(here::here()), "."), 
+        version = purrr::map_chr(package, ~ tryCatch(as.character(packageVersion(.x)), error = function() NA)))
 ```
 
 ## 3. Restore the environment
