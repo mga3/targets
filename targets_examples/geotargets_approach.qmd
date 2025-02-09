@@ -1,0 +1,189 @@
+---
+title: Cloud storage and geotargets
+author: mga3
+format: 
+    html:
+        embed-resources: true
+        self-contained: true
+execute: 
+    echo: true
+    eval: false
+date: last-modified
+---
+
+This script shows a minimum working example and describes ways to use {targets} 
+and {geotargets}, together with AWS cloud storage to prevent limitations with 
+local storage - a problem that often occurs working with tagged image format 
+files (.tiff / .tif).
+
+<div class="banner banner-left"></div>
+
+<div class="banner banner-right"></div>
+
+## Introduction
+
+Targets are saved by default in the `_targets/objects` folder, in the working 
+directory, alongside the `_targets.R` script the targets were defined in.
+This document explains how to save that `/objects`, and the `/meta` folder, to s3.
+
+_Why do this?_
+
+Using s3 as the targets storage solution is detailed [here](https://books.ropensci.org/targets/cloud-storage.html#:~:text=11.2.1-,AWS%20setup,-Skip%20these%20steps). One benefit of taking this approach is the `_targets/meta` folder is also saved on s3. This means if you have to stop before running all of a targets pipeline and someone else with the same s3 credentials wants to take over and run the targets pipeline on a different instance / computer, they can pick up where you left off with `targets::tar_meta_download()`.
+
+I also want to prevent too much being saved locally - I have a limited local storage capacity and want to use .tif files in my analysis, which are sometimes large. 
+
+## Problem detecting changes in .tif files
+
+The data I need is saved on AWS s3. As a setup stage of a larger analytical project, I often want to 
+read data in from s3, manipulate it, then upload the clean, altered data into s3. A benefit using {targets} is that when I run the full targets pipeline, the targets that have already set up and saved the clean data (plus any downstream targets already run with no other unchanged dependencies) will be skipped. 
+
+Equally, if I change the raw data and save it on s3, I want the {targets} pipeline to detect the change and run the download and cleaning of the targets. This works with most common formats for data, but .tif files saved to s3 changing by a small amount do not trigger changes in s3 metadata (No changes in the Etag metadata, specifically. The 'last-modified' date will change, but that doesn't necessarily mean the file contents have changed). Depending on the change, the file can skip all of [these](https://books.ropensci.org/targets-design/data.html#:~:text=2.6-,Skipping%20up%2Dto%2Ddate%20targets,-targets%20uses%20the) tests {targets} runs through to detect a change, so the target would be skipped. The aim with this script then is to automate a check for raw files on s3 changing that also works for .tif files, and reduce the complexity of targets pipelines (because no targets are needed to clean up the local directory afterwards). 
+
+## Sketch for the main file, `_targets.R`
+
+ 
+First, what should the different sections within a `_targets.R` script look like?
+
+### Packages and Versions:
+
+The main two here for cloud functionality are:
+
+targets 1.7.1
+
+geotargets 0.1.0.9000
+
+### Set target options with `targets::tar_option_set()`
+
+Use :: notation where possible in custom function definitions to make explicit the package required. Alternatively, set the packages required with `packages = c("package1","package2",...)` in `targets::tar_option_set()` within the _targets.R script.
+
+For cloud storage of targets, the repository and resources arguments need to be defined. I set up a directory for the targets in s3 called `target_storage/run_1`. To point to this directory, the arguments should be set up as below:
+
+`repository = "aws",`<br>
+
+`resources = tar_resources(`<br>
+
+`aws =  tar_resources_aws(bucket = "add_bucket_here",`<br>
+
+`prefix = "add/s3/path/here"))`<br>
+
+### Source custom functions in `R/`
+
+`tar_source()`
+
+## Basic setup not with .tif raster data
+
+### `list()` the targets
+
+The first target, we call _data_. It generates a list that includes the s3 URI for the (non-raster) data and the file size.
+
+The user inputs the s3_uri and file size is taken from the files' metadata on s3:
+
+`s3fs::s3_file_info(s3_uri)$size`
+
+Use `repository = "aws"` being set here ensures the target does not exist locally.
+
+Setting `targets::tar_cue(mode = "always")` means this target is never skipped when `tar_make()` is run.
+
+This is required so the s3 metadata for the file is updated.
+
+The second target, _read_data_, is then saved as a target object. It only reruns if the metadata of the original file has changed, as _data_ is added as a dependency explicitly.
+
+`format = "file"` is also used so that any changes to the target file are detected and downstream targets marked as outdated.
+
+The third target, _model_ applies some function to the file saved to s3.
+
+Let's look at the dependency plot for this setup, using `targets::tar_glimpse()`:
+
+ 
+
+```{r}
+
+#| label: targets pipeline
+
+#| tbl-cap: How each of the targets relate to each other.
+
+targets::tar_glimpse()
+
+```
+
+ 
+
+## Where are the targets saved?
+
+In the repository argument for `targets::tar_target()`, the [documentation](https://docs.ropensci.org/targets/reference/tar_target.html#:~:text=character(0).-,If%20repository%20is%20not%20%22local%22%20and%20format%20is%20%22file%22,the%20cloud.%20The%20local%20file%20is%20deleted%20after%20the%20target%20runs.,-%22url%22%3A%20A) says
+
+'Note: if repository is not "local" and format is "file" then the target should
+
+create a single output file. That output file is uploaded to the cloud and
+
+tracked for changes where it exists in the cloud. The local file is deleted
+
+after the target runs.'
+
+To read the targets, run `targets::tar_read()` in the console.
+
+The result is a target that saves a file locally while the target is run, then saves the file to aws and deletes the local copy. This means the target can be passed like a file into the next target instead of the url.
+
+Next, check this setup can detect if the source file changes the metadata (e.g. file upload).
+
+## geotargets - proof of concept pipeline applied to .tif raster data
+
+We can adapt the design of the _data_ target and include `iteration = "list"` as an argument in the `tar_target()`. This allows us to list the s3 URIs that need checking for changes before the downstream targets run.
+
+Looking at the setup:
+
+```{r}
+
+targets::tar_glimpse(names = targets::starts_with("raster"))
+
+```
+
+Each of these targets are saved to s3, with all having the `repository = "aws"` argument. The rasters are therefore targets in s3 that can be manipulated by downstream targets. A description of the process for this skeleton design from the above network plot is below, target by target.
+
+_s3_uris_ lists all of the s3 URIs in the repository. After that, the metadata(size) of each raster is checked in the _rasters_metadata_ target.
+
+_raster_targets_ then reads each of those rasters in as individual targets, looping over the list of rasters with `pattern = map(s3_uris)`.
+
+_sprc_ is a SpatRaster Collection target. It reads each of the rasters in from their s3 URI and combines them entry-by-entry into a single sprc object.
+
+_raster_extract_ takes the first part of the sprc object to collect the first raster in the list.
+
+## Alternative approaches for detecting file changes using cloud storage
+
+1. Use `attr(aws.s3::head_object("filename.ext", "add_bucket_here"), "content-length")` to get the file size in bytes not megabytes. Looks as though aws.s3 support is discontinued and the s3fs may still detect changes <0.1MB.
+
+1. Use `s3fs::s3_file_info(s3_url)$last_modified` as another metadata check. This works well at detecting if the file is uploaded, but can show false positives; if the same file is uploaded with no changes it triggers a change to downstream targets as if the file contents changed.
+
+1. Use `s3fs::s3_file_info(s3_url)$etag` as another metadata check. Only works for files greater than five GB in size. Larger than this means s3 uploads files with a multi-part upload process that can detect any internal changes to files.
+
+1. Manual version of 2., `cli::hash_file_sha256(basename(s3_uri))` can create a hash for the contents of a file. A downstream target can detect the name change and trigger downstream targets to run. Here is a sketch of the function:
+
+```{r hash_file_contents, eval = FALSE}
+
+import_file_hash <- function(s3_uri) {
+
+  # Download the file from s3, compute it's hash. Compare the contents with the
+
+  # name of the file. If the name doesn't match the hash, replace the name of
+
+  # the local file with the new hash. The output of a target with this in will
+
+  # then be a file saved with a name equal to it's hash.
+
+ 
+
+  s3fs::s3_file_download(s3_uri, basename(s3_uri))
+
+  hash <- cli::hash_file_sha256(basename(s3_uri)) # this function better than digest::digest() for file contents.
+
+  last_hash <- sub(\\..*$, "", local_filename)
+
+  if (hash != last_hash) {
+
+    file.rename(local_filename, paste0(substr(hash, 1, 6), ".", tools::file_ext(local_filename)))
+
+  }
+
+}
+
+```
